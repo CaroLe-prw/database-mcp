@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: database-mcp
+  main:
+    web-application-type: none
+    banner-mode: off
+  ai:
+    mcp:
+      server:
+        name: database-mcp-server
+        version: 1.0.0
+        type: SYNC
+
+logging:
+  level:
+    root: ERROR  # 只显示错误级别日志
+    com.carole.database.mcp: WARN  # 项目日志设为警告级别
+    org.springframework: ERROR  # Spring框架日志设为错误级别
+  pattern:
+    console: "%msg%n"  # 简化控制台输出格式
+  file:
+    name: logs/database-mcp.log  # 详细日志输出到文件
