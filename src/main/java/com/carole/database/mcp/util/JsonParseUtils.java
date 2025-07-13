@@ -4,20 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.carole.database.mcp.config.DatabaseConfig;
 import com.carole.database.mcp.pojo.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * JSON parsing utilities for MCP operations
+ * Enhanced JSON parsing utilities for MCP operations with multi-datasource support
  * 
- * This utility provides simple JSON parsing functions for handling fixed values and other JSON data in MCP tool
- * operations.
+ * This utility provides JSON parsing functions for handling fixed values, database configurations, and other JSON data
+ * in MCP tool operations. Enhanced to support datasource configuration parsing for multi-datasource scenarios.
  * 
  * @author CaroLe
  * @Date 2025/7/7
- * @Description JSON parsing utilities for MCP data insertion
+ * @Description Enhanced JSON parsing utilities for MCP operations with multi-datasource support
  */
 public class JsonParseUtils {
 
@@ -261,53 +262,10 @@ public class JsonParseUtils {
     }
 
     /**
-     * Parse JSON value (string, number, boolean, array, object)
-     * 
-     * @param valueStr Value string
-     * @return Parsed value
-     */
-    private static Object parseJsonValue(String valueStr) {
-        valueStr = valueStr.trim();
-
-        if ("null".equals(valueStr)) {
-            return null;
-        }
-
-        if ("true".equals(valueStr) || "false".equals(valueStr)) {
-            return Boolean.parseBoolean(valueStr);
-        }
-
-        if (valueStr.startsWith("[") && valueStr.endsWith("]")) {
-            // Parse array
-            List<Object> list = new ArrayList<>();
-            String arrayContent = valueStr.substring(1, valueStr.length() - 1);
-            if (!arrayContent.trim().isEmpty()) {
-                List<String> items = parseJsonPairs(arrayContent);
-                for (String item : items) {
-                    list.add(parseJsonValue(item));
-                }
-            }
-            return list;
-        }
-
-        if (valueStr.startsWith("{") && valueStr.endsWith("}")) {
-            // Parse nested object
-            return parseJsonToMap(valueStr);
-        }
-
-        if (valueStr.startsWith("\"") && valueStr.endsWith("\"")) {
-            return valueStr.substring(1, valueStr.length() - 1);
-        }
-
-        // Try to parse as number
-        return convertValue(valueStr);
-    }
-
-    /**
      * Parse JSON configuration into UpdateRequest object
      * 
-     * This method parses a complete JSON configuration string into a structured UpdateRequest
-     * object, including global settings, update rules, conditions, and values.
+     * This method parses a complete JSON configuration string into a structured UpdateRequest object, including global
+     * settings, update rules, conditions, and values.
      * 
      * @param tableName Target table name
      * @param updateConfigJson JSON configuration string
@@ -323,15 +281,15 @@ public class JsonParseUtils {
             if (configMap == null) {
                 return null;
             }
-            
+
             UpdateRequest updateRequest = new UpdateRequest(tableName);
-            
+
             // Parse global settings
             parseUpdateGlobalSettings(configMap, updateRequest);
-            
+
             // Parse update rules
             if (configMap.containsKey("updateRules")) {
-                List<Map<String, Object>> rulesList = (List<Map<String, Object>>) configMap.get("updateRules");
+                List<Map<String, Object>> rulesList = (List<Map<String, Object>>)configMap.get("updateRules");
                 for (Map<String, Object> ruleMap : rulesList) {
                     UpdateRule rule = parseUpdateRule(ruleMap);
                     if (rule != null) {
@@ -339,9 +297,9 @@ public class JsonParseUtils {
                     }
                 }
             }
-            
+
             return updateRequest;
-            
+
         } catch (Exception e) {
             return null;
         }
@@ -350,8 +308,8 @@ public class JsonParseUtils {
     /**
      * Parse global settings from configuration map into UpdateRequest
      * 
-     * Extracts and applies global configuration settings such as transaction usage,
-     * maximum affected records, dry run mode, and detail return preferences.
+     * Extracts and applies global configuration settings such as transaction usage, maximum affected records, dry run
+     * mode, and detail return preferences.
      * 
      * @param configMap Configuration map containing global settings
      * @param updateRequest UpdateRequest object to apply settings to
@@ -361,24 +319,24 @@ public class JsonParseUtils {
      */
     private static void parseUpdateGlobalSettings(Map<String, Object> configMap, UpdateRequest updateRequest) {
         if (configMap.containsKey("useTransaction")) {
-            updateRequest.setUseTransaction((Boolean) configMap.get("useTransaction"));
+            updateRequest.setUseTransaction((Boolean)configMap.get("useTransaction"));
         }
         if (configMap.containsKey("maxTotalAffectedRecords")) {
-            updateRequest.setMaxTotalAffectedRecords(((Number) configMap.get("maxTotalAffectedRecords")).intValue());
+            updateRequest.setMaxTotalAffectedRecords(((Number)configMap.get("maxTotalAffectedRecords")).intValue());
         }
         if (configMap.containsKey("dryRun")) {
-            updateRequest.setDryRun((Boolean) configMap.get("dryRun"));
+            updateRequest.setDryRun((Boolean)configMap.get("dryRun"));
         }
         if (configMap.containsKey("returnDetails")) {
-            updateRequest.setReturnDetails((Boolean) configMap.get("returnDetails"));
+            updateRequest.setReturnDetails((Boolean)configMap.get("returnDetails"));
         }
     }
 
     /**
      * Parse a single update rule from configuration map
      * 
-     * Converts a configuration map into an UpdateRule object, including
-     * conditions, update values, and rule-specific settings like maximum affected records.
+     * Converts a configuration map into an UpdateRule object, including conditions, update values, and rule-specific
+     * settings like maximum affected records.
      * 
      * @param ruleMap Configuration map containing rule configuration
      * @return Parsed UpdateRule or null if parsing fails
@@ -390,10 +348,10 @@ public class JsonParseUtils {
     public static UpdateRule parseUpdateRule(Map<String, Object> ruleMap) {
         try {
             UpdateRule rule = new UpdateRule();
-            
+
             // Parse conditions
             if (ruleMap.containsKey("conditions")) {
-                List<Map<String, Object>> conditionsList = (List<Map<String, Object>>) ruleMap.get("conditions");
+                List<Map<String, Object>> conditionsList = (List<Map<String, Object>>)ruleMap.get("conditions");
                 for (Map<String, Object> conditionMap : conditionsList) {
                     UpdateCondition condition = parseUpdateCondition(conditionMap);
                     if (condition != null) {
@@ -401,18 +359,18 @@ public class JsonParseUtils {
                     }
                 }
             }
-            
+
             // Parse update values
             if (ruleMap.containsKey("updateValues")) {
-                Map<String, Object> updateValues = (Map<String, Object>) ruleMap.get("updateValues");
+                Map<String, Object> updateValues = (Map<String, Object>)ruleMap.get("updateValues");
                 rule.setUpdateValues(updateValues);
             }
-            
+
             // Parse optional rule settings
             parseUpdateRuleSettings(ruleMap, rule);
-            
+
             return rule;
-            
+
         } catch (Exception e) {
             return null;
         }
@@ -421,8 +379,8 @@ public class JsonParseUtils {
     /**
      * Parse rule-specific settings from configuration map
      * 
-     * Extracts optional rule settings such as maximum affected records and
-     * whether conditions are required for the specific rule.
+     * Extracts optional rule settings such as maximum affected records and whether conditions are required for the
+     * specific rule.
      * 
      * @param ruleMap Configuration map containing rule configuration
      * @param rule UpdateRule object to apply settings to
@@ -432,18 +390,18 @@ public class JsonParseUtils {
      */
     private static void parseUpdateRuleSettings(Map<String, Object> ruleMap, UpdateRule rule) {
         if (ruleMap.containsKey("maxAffectedRecords")) {
-            rule.setMaxAffectedRecords(((Number) ruleMap.get("maxAffectedRecords")).intValue());
+            rule.setMaxAffectedRecords(((Number)ruleMap.get("maxAffectedRecords")).intValue());
         }
         if (ruleMap.containsKey("requireConditions")) {
-            rule.setRequireConditions((Boolean) ruleMap.get("requireConditions"));
+            rule.setRequireConditions((Boolean)ruleMap.get("requireConditions"));
         }
     }
 
     /**
      * Parse a single update condition from configuration map
      * 
-     * Converts a configuration map into an UpdateCondition object,
-     * handling various operators and both single and multiple values for conditions.
+     * Converts a configuration map into an UpdateCondition object, handling various operators and both single and
+     * multiple values for conditions.
      * 
      * @param conditionMap Configuration map containing condition configuration
      * @return Parsed UpdateCondition or null if parsing fails
@@ -455,25 +413,25 @@ public class JsonParseUtils {
     public static UpdateCondition parseUpdateCondition(Map<String, Object> conditionMap) {
         try {
             UpdateCondition condition = new UpdateCondition();
-            
+
             // Parse required fields
             if (!conditionMap.containsKey("field") || !conditionMap.containsKey("operator")) {
                 return null;
             }
-            
-            condition.setField((String) conditionMap.get("field"));
-            condition.setOperator((String) conditionMap.get("operator"));
-            
+
+            condition.setField((String)conditionMap.get("field"));
+            condition.setOperator((String)conditionMap.get("operator"));
+
             // Parse connector (optional)
             if (conditionMap.containsKey("connector")) {
-                condition.setConnector((String) conditionMap.get("connector"));
+                condition.setConnector((String)conditionMap.get("connector"));
             }
-            
+
             // Parse value or values
             parseUpdateConditionValues(conditionMap, condition);
-            
+
             return condition;
-            
+
         } catch (Exception e) {
             return null;
         }
@@ -482,8 +440,8 @@ public class JsonParseUtils {
     /**
      * Parse condition values (single or multiple) from configuration map
      * 
-     * Handles both single values and arrays of values for different operators,
-     * particularly for IN/NOT IN operations that require multiple values.
+     * Handles both single values and arrays of values for different operators, particularly for IN/NOT IN operations
+     * that require multiple values.
      * 
      * @param conditionMap Configuration map containing condition configuration
      * @param condition UpdateCondition object to set values on
@@ -495,7 +453,7 @@ public class JsonParseUtils {
     private static void parseUpdateConditionValues(Map<String, Object> conditionMap, UpdateCondition condition) {
         if (conditionMap.containsKey("values")) {
             // Multiple values for IN/NOT IN
-            List<Object> values = (List<Object>) conditionMap.get("values");
+            List<Object> values = (List<Object>)conditionMap.get("values");
             condition.setValues(values);
         } else if (conditionMap.containsKey("value")) {
             // Single value
@@ -504,31 +462,10 @@ public class JsonParseUtils {
     }
 
     /**
-     * Validate parsed UpdateRequest for completeness and correctness
-     * 
-     * Performs comprehensive validation of a parsed UpdateRequest to ensure
-     * all required fields are present and values are within acceptable ranges.
-     * 
-     * @param updateRequest The UpdateRequest to validate
-     * @return Validation error message or null if valid
-     * @author CaroLe
-     * @Date 2025/07/10
-     * @Description Complete validation of parsed update request configuration
-     */
-    public static String validateParsedUpdateRequest(UpdateRequest updateRequest) {
-        if (updateRequest == null) {
-            return "Update request is null";
-        }
-        
-        // Use the built-in validation method
-        return updateRequest.validate();
-    }
-    
-    /**
      * Parse JSON configuration into DeleteRequest object
      * 
-     * This method parses a complete JSON configuration string into a structured DeleteRequest
-     * object, including global settings, delete rules, and conditions.
+     * This method parses a complete JSON configuration string into a structured DeleteRequest object, including global
+     * settings, delete rules, and conditions.
      * 
      * @param tableName Target table name
      * @param deleteConfigJson JSON configuration string
@@ -544,15 +481,15 @@ public class JsonParseUtils {
             if (configMap == null) {
                 return null;
             }
-            
+
             DeleteRequest deleteRequest = new DeleteRequest(tableName);
-            
+
             // Parse global settings
             parseDeleteGlobalSettings(configMap, deleteRequest);
-            
+
             // Parse delete rules
             if (configMap.containsKey("deleteRules")) {
-                List<Map<String, Object>> rulesList = (List<Map<String, Object>>) configMap.get("deleteRules");
+                List<Map<String, Object>> rulesList = (List<Map<String, Object>>)configMap.get("deleteRules");
                 for (Map<String, Object> ruleMap : rulesList) {
                     DeleteRule rule = parseDeleteRule(ruleMap);
                     if (rule != null) {
@@ -560,19 +497,19 @@ public class JsonParseUtils {
                     }
                 }
             }
-            
+
             return deleteRequest;
-            
+
         } catch (Exception e) {
             return null;
         }
     }
-    
+
     /**
      * Parse global settings from configuration map into DeleteRequest
      * 
-     * Extracts and applies global configuration settings such as transaction usage,
-     * maximum affected records, dry run mode, and detail return preferences.
+     * Extracts and applies global configuration settings such as transaction usage, maximum affected records, dry run
+     * mode, and detail return preferences.
      * 
      * @param configMap Configuration map containing global settings
      * @param deleteRequest DeleteRequest object to apply settings to
@@ -582,24 +519,24 @@ public class JsonParseUtils {
      */
     private static void parseDeleteGlobalSettings(Map<String, Object> configMap, DeleteRequest deleteRequest) {
         if (configMap.containsKey("useTransaction")) {
-            deleteRequest.setUseTransaction((Boolean) configMap.get("useTransaction"));
+            deleteRequest.setUseTransaction((Boolean)configMap.get("useTransaction"));
         }
         if (configMap.containsKey("maxTotalAffectedRecords")) {
-            deleteRequest.setMaxTotalAffectedRecords(((Number) configMap.get("maxTotalAffectedRecords")).intValue());
+            deleteRequest.setMaxTotalAffectedRecords(((Number)configMap.get("maxTotalAffectedRecords")).intValue());
         }
         if (configMap.containsKey("dryRun")) {
-            deleteRequest.setDryRun((Boolean) configMap.get("dryRun"));
+            deleteRequest.setDryRun((Boolean)configMap.get("dryRun"));
         }
         if (configMap.containsKey("returnDetails")) {
-            deleteRequest.setReturnDetails((Boolean) configMap.get("returnDetails"));
+            deleteRequest.setReturnDetails((Boolean)configMap.get("returnDetails"));
         }
     }
-    
+
     /**
      * Parse a single delete rule from configuration map
      * 
-     * Converts a configuration map into a DeleteRule object, including
-     * conditions and rule-specific settings like maximum affected records.
+     * Converts a configuration map into a DeleteRule object, including conditions and rule-specific settings like
+     * maximum affected records.
      * 
      * @param ruleMap Configuration map containing rule configuration
      * @return Parsed DeleteRule or null if parsing fails
@@ -611,10 +548,10 @@ public class JsonParseUtils {
     public static DeleteRule parseDeleteRule(Map<String, Object> ruleMap) {
         try {
             DeleteRule rule = new DeleteRule();
-            
+
             // Parse conditions
             if (ruleMap.containsKey("conditions")) {
-                List<Map<String, Object>> conditionsList = (List<Map<String, Object>>) ruleMap.get("conditions");
+                List<Map<String, Object>> conditionsList = (List<Map<String, Object>>)ruleMap.get("conditions");
                 for (Map<String, Object> conditionMap : conditionsList) {
                     DeleteCondition condition = parseDeleteCondition(conditionMap);
                     if (condition != null) {
@@ -622,22 +559,22 @@ public class JsonParseUtils {
                     }
                 }
             }
-            
+
             // Parse optional rule settings
             parseDeleteRuleSettings(ruleMap, rule);
-            
+
             return rule;
-            
+
         } catch (Exception e) {
             return null;
         }
     }
-    
+
     /**
      * Parse rule-specific settings from configuration map
      * 
-     * Extracts optional rule settings such as maximum affected records,
-     * whether conditions are required, and rule description.
+     * Extracts optional rule settings such as maximum affected records, whether conditions are required, and rule
+     * description.
      * 
      * @param ruleMap Configuration map containing rule configuration
      * @param rule DeleteRule object to apply settings to
@@ -647,21 +584,21 @@ public class JsonParseUtils {
      */
     private static void parseDeleteRuleSettings(Map<String, Object> ruleMap, DeleteRule rule) {
         if (ruleMap.containsKey("maxAffectedRecords")) {
-            rule.setMaxAffectedRecords(((Number) ruleMap.get("maxAffectedRecords")).intValue());
+            rule.setMaxAffectedRecords(((Number)ruleMap.get("maxAffectedRecords")).intValue());
         }
         if (ruleMap.containsKey("requireConditions")) {
-            rule.setRequireConditions((Boolean) ruleMap.get("requireConditions"));
+            rule.setRequireConditions((Boolean)ruleMap.get("requireConditions"));
         }
         if (ruleMap.containsKey("description")) {
-            rule.setDescription((String) ruleMap.get("description"));
+            rule.setDescription((String)ruleMap.get("description"));
         }
     }
-    
+
     /**
      * Parse a single delete condition from configuration map
      * 
-     * Converts a configuration map into a DeleteCondition object,
-     * handling various operators and both single and multiple values for conditions.
+     * Converts a configuration map into a DeleteCondition object, handling various operators and both single and
+     * multiple values for conditions.
      * 
      * @param conditionMap Configuration map containing condition configuration
      * @return Parsed DeleteCondition or null if parsing fails
@@ -673,35 +610,35 @@ public class JsonParseUtils {
     public static DeleteCondition parseDeleteCondition(Map<String, Object> conditionMap) {
         try {
             DeleteCondition condition = new DeleteCondition();
-            
+
             // Parse required fields
             if (!conditionMap.containsKey("field") || !conditionMap.containsKey("operator")) {
                 return null;
             }
-            
-            condition.setField((String) conditionMap.get("field"));
-            condition.setOperator((String) conditionMap.get("operator"));
-            
+
+            condition.setField((String)conditionMap.get("field"));
+            condition.setOperator((String)conditionMap.get("operator"));
+
             // Parse connector (optional)
             if (conditionMap.containsKey("connector")) {
-                condition.setConnector((String) conditionMap.get("connector"));
+                condition.setConnector((String)conditionMap.get("connector"));
             }
-            
+
             // Parse value or values
             parseDeleteConditionValues(conditionMap, condition);
-            
+
             return condition;
-            
+
         } catch (Exception e) {
             return null;
         }
     }
-    
+
     /**
      * Parse condition values (single or multiple) from configuration map
      * 
-     * Handles both single values and arrays of values for different operators,
-     * particularly for IN/NOT IN operations that require multiple values.
+     * Handles both single values and arrays of values for different operators, particularly for IN/NOT IN operations
+     * that require multiple values.
      * 
      * @param conditionMap Configuration map containing condition configuration
      * @param condition DeleteCondition object to set values on
@@ -713,32 +650,60 @@ public class JsonParseUtils {
     private static void parseDeleteConditionValues(Map<String, Object> conditionMap, DeleteCondition condition) {
         if (conditionMap.containsKey("values")) {
             // Multiple values for IN/NOT IN
-            List<Object> values = (List<Object>) conditionMap.get("values");
+            List<Object> values = (List<Object>)conditionMap.get("values");
             condition.setValues(values);
         } else if (conditionMap.containsKey("value")) {
             // Single value
             condition.setValue(conditionMap.get("value"));
         }
     }
-    
+
+    // ================================================================================================
+    // DATASOURCE CONFIGURATION PARSING METHODS
+    // ================================================================================================
+
     /**
-     * Validate parsed DeleteRequest for completeness and correctness
+     * Parse single data source configuration from JSON string
      * 
-     * Performs comprehensive validation of a parsed DeleteRequest to ensure
-     * all required fields are present and values are within acceptable ranges.
+     * Parses JSON configuration for dynamic datasource creation. Used for runtime datasource configuration when
+     * predefined datasources are not available.
      * 
-     * @param deleteRequest The DeleteRequest to validate
-     * @return Validation error message or null if valid
+     * @param jsonConfig JSON configuration string
+     * @return DatabaseConfig instance or null if parsing fails
      * @author CaroLe
-     * @Date 2025/07/10
-     * @Description Complete validation of parsed delete request configuration
+     * @Date 2025/07/13
+     * @Description Parse dynamic datasource configuration from JSON
      */
-    public static String validateParsedDeleteRequest(DeleteRequest deleteRequest) {
-        if (deleteRequest == null) {
-            return "Delete request is null";
+    public static DatabaseConfig parseDataSourceConfig(String jsonConfig) {
+        if (jsonConfig == null || jsonConfig.trim().isEmpty()) {
+            return null;
         }
-        
-        // Use the built-in validation method
-        return deleteRequest.validate();
+
+        try {
+            return OBJECT_MAPPER.readValue(jsonConfig, DatabaseConfig.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
+
+    /**
+     * Check if a string is in JSON format
+     * 
+     * Quick check to determine if a string appears to be JSON for datasource configuration purposes.
+     * 
+     * @param input Input string to check
+     * @return true if the string appears to be JSON
+     * @author CaroLe
+     * @Date 2025/07/13
+     * @Description JSON format detection for datasource configuration
+     */
+    public static boolean isJsonFormat(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return false;
+        }
+
+        String trimmed = input.trim();
+        return (trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"));
+    }
+
 }

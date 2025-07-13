@@ -47,12 +47,6 @@ public class SqlTypeConstants {
     public static final int DEFAULT_DECIMAL_SCALE = 2;
 
     /**
-     * SQL standard string length limits
-     */
-    public static final int MAX_VARCHAR_LENGTH = 65535;
-    public static final int MAX_CHAR_LENGTH = 255;
-
-    /**
      * JSON generation configuration
      */
     public static final int MIN_JSON_FIELDS = 2;
@@ -64,13 +58,6 @@ public class SqlTypeConstants {
      */
     public static final int NULL_PROBABILITY_PERCENTAGE = 5;
     public static final int DEFAULT_VALUE_PROBABILITY_PERCENTAGE = 10;
-
-    /**
-     * Character sets for string generation
-     */
-    public static final String ALPHANUMERIC_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    public static final String NUMERIC_CHARS = "0123456789";
-    public static final String ALPHA_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
     // Private constructor to prevent instantiation
     private SqlTypeConstants() {

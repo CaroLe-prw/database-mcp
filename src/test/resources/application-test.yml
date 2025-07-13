@@ -1,0 +1,29 @@
+# 测试配置文件
+# 为测试环境配置多数据源
+
+# 或者使用 JSON 配置
+DATASOURCE_CONFIG: |
+  {
+    "dataSources": [
+      {
+        "name": "pms",
+        "description": "Product Management System",
+        "host": "192.168.31.50",
+        "port": "3306",
+        "username": "root",
+        "password": "Aa040832@",
+        "database": "mall_pms",
+        "databaseType": "mysql"
+      },
+      {
+        "name": "admin",
+        "description": "Admin Management System",
+        "host": "192.168.31.50",
+        "port": "3306",
+        "username": "root",
+        "password": "Aa040832@",
+        "database": "mall_admin",
+        "databaseType": "mysql"
+      }
+    ]
+  }

@@ -8,8 +8,8 @@ import lombok.Data;
 /**
  * Data group for grouping records with different conditions
  * 
- * This class represents a group of records that share the same generation rules and fixed values.
- * Multiple groups can be used to create different sets of data with different characteristics.
+ * This class represents a group of records that share the same generation rules and fixed values. Multiple groups can
+ * be used to create different sets of data with different characteristics.
  * 
  * @author CaroLe
  * @Date 2025/7/9
@@ -17,7 +17,7 @@ import lombok.Data;
  */
 @Data
 public class DataGroup {
-    
+
     /**
      * Number of records in this group
      */

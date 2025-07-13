@@ -2,11 +2,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 
 import com.carole.database.mcp.DatabaseMcpApplication;
 import com.carole.database.mcp.service.DatabaseService;
+
+import jakarta.annotation.Resource;
 
 /**
  * @author CaroLe
@@ -14,26 +16,54 @@ import com.carole.database.mcp.service.DatabaseService;
  * @Description
  */
 @SpringBootTest(classes = DatabaseMcpApplication.class)
+@TestPropertySource(locations = "classpath:application-test.properties")
 public class DatabaseMcpTest {
-    @Autowired
+
+    @Resource
     private DatabaseService databaseService;
 
     @Test
     public void testListTables() {
-        // 执行测试
-        String tables = databaseService.listTables();
+        // 执行测试 - 使用默认数据源
+        String tables = databaseService.listTables(null);
 
         // 验证结果
         assertNotNull(tables);
         assertFalse(tables.isEmpty());
 
         // 输出结果
+        System.out.println("=== Default DataSource Tables ===");
+        System.out.println(tables);
+    }
+
+    @Test
+    public void testListTablesWithDynamicConfig() {
+        // 测试动态数据源配置
+        String adminConfig = """
+            {
+              "host": "192.168.31.50",
+              "port": "3306",
+              "username": "root",
+              "password": "Aa040832@",
+              "database": "mall_admin",
+              "databaseType": "mysql"
+            }
+            """;
+
+        String tables = databaseService.listTables(adminConfig);
+
+        // 验证结果
+        assertNotNull(tables);
+        assertFalse(tables.isEmpty());
+
+        // 输出结果
+        System.out.println("=== Dynamic DataSource (mall_admin) Tables ===");
         System.out.println(tables);
     }
 
     @Test
     public void describeTable() {
-        String tableInfo = databaseService.describeTable("sys_user");
+        String tableInfo = databaseService.describeTable("sys_user", null);
 
         // 输出结果
         System.out.println(tableInfo);
@@ -61,7 +91,7 @@ public class DatabaseMcpTest {
                     }
                 }
                 """;
-        String result = databaseService.insertData("sys_user", 6, jsonConfig);
+        String result = databaseService.insertData("sys_user", 6, jsonConfig, "admin");
         // 输出结果
         System.out.println(result);
 
@@ -83,7 +113,7 @@ public class DatabaseMcpTest {
               ]
             }
             """;
-        String result = databaseService.updateData("sys_user", jsonConfig);
+        String result = databaseService.updateData("sys_user", jsonConfig, "admin");
         // 输出结果
         System.out.println(result);
 
@@ -110,7 +140,7 @@ public class DatabaseMcpTest {
                 "returnDetails": true
             }
             """;
-        String result = databaseService.deleteData("sys_user", jsonConfig);
+        String result = databaseService.deleteData("sys_user", jsonConfig, "admin");
         // 输出结果
         System.out.println(result);
 
@@ -119,7 +149,7 @@ public class DatabaseMcpTest {
     @Test
     public void executeQuery() {
         String sqlQuery = "SELECT * FROM sys_user WHERE username = '234'";
-        String result = databaseService.executeQuery(sqlQuery);
+        String result = databaseService.executeQuery(sqlQuery, "admin");
         // 输出结果
         System.out.println(result);
     }

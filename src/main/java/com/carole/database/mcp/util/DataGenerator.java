@@ -34,7 +34,7 @@ import net.datafaker.Faker;
  */
 public class DataGenerator {
 
-    private static final net.datafaker.Faker FAKER = new Faker(Locale.CHINA);
+    private static final Faker FAKER = new Faker(Locale.CHINA);
     private static final Random RANDOM = new Random();
 
     // Snowflake ID generator for VARCHAR ID fields

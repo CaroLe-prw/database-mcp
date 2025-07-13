@@ -127,13 +127,4 @@ public class DatabaseOperationConfig {
         return null;
     }
 
-    /**
-     * Check if operation is in development mode (most operations allowed)
-     * 
-     * @return true if in development mode
-     */
-    public boolean isDevelopmentMode() {
-        return allowInsertOperation && allowUpdateOperation && allowDeleteOperation;
-    }
-
 }

@@ -111,34 +111,6 @@ public class SqlSecurityValidator {
     }
 
     /**
-     * Validate and escape table name
-     * 
-     * @param tableName Table name to validate and escape
-     * @return Escaped table name
-     * @throws IllegalArgumentException if table name is invalid
-     */
-    public static String validateAndEscapeTableName(String tableName) {
-        if (!isValidTableName(tableName)) {
-            throw new IllegalArgumentException("Invalid table name: " + tableName);
-        }
-        return escapeIdentifier(tableName);
-    }
-
-    /**
-     * Validate and escape column name
-     * 
-     * @param columnName Column name to validate and escape
-     * @return Escaped column name
-     * @throws IllegalArgumentException if column name is invalid
-     */
-    public static String validateAndEscapeColumnName(String columnName) {
-        if (!isValidColumnName(columnName)) {
-            throw new IllegalArgumentException("Invalid column name: " + columnName);
-        }
-        return escapeIdentifier(columnName);
-    }
-
-    /**
      * Validate record count for batch operations
      * 
      * @param count Record count to validate
@@ -284,30 +256,6 @@ public class SqlSecurityValidator {
     }
 
     /**
-     * Validate UPDATE field name and value for security
-     * 
-     * @param fieldName Field name to validate
-     * @param value Value to validate (can be null)
-     * @return Error message if validation fails, null if valid
-     */
-    public static String validateUpdateField(String fieldName, Object value) {
-        // Validate field name
-        String fieldError = getColumnNameValidationError(fieldName);
-        if (fieldError != null) {
-            return fieldError;
-        }
-        
-        // Value can be null (for setting NULL), but if it's a string, check for injection patterns
-        if (value instanceof String stringValue) {
-            if (containsSqlInjectionPatterns(stringValue)) {
-                return "Update value contains potentially dangerous SQL patterns: " + stringValue;
-            }
-        }
-        
-        return null;
-    }
-    
-    /**
      * Validate UPDATE operation parameters
      * 
      * @deprecated Use DatabaseOperationConfig.validateUpdateOperation() instead
@@ -322,77 +270,19 @@ public class SqlSecurityValidator {
         if (tableError != null) {
             return tableError;
         }
-        
+
         // Validate max affected records
         if (maxAffectedRecords <= 0) {
             return "Maximum affected records must be positive";
         }
-        
+
         if (maxAffectedRecords > 50000) {
             return "Maximum affected records cannot exceed 50000 for safety";
         }
-        
+
         return null;
     }
-    
-    /**
-     * Validate UPDATE condition field and operator
-     * 
-     * @param fieldName Field name in condition
-     * @param operator SQL operator (=, !=, >, <, >=, <=, IN, NOT IN, LIKE, NOT LIKE)
-     * @param value Condition value
-     * @return Error message if validation fails, null if valid
-     */
-    public static String validateUpdateCondition(String fieldName, String operator, Object value) {
-        // Validate field name
-        String fieldError = getColumnNameValidationError(fieldName);
-        if (fieldError != null) {
-            return fieldError;
-        }
-        
-        // Validate operator
-        if (operator == null || operator.trim().isEmpty()) {
-            return "Operator cannot be null or empty";
-        }
-        
-        String upperOperator = operator.toUpperCase().trim();
-        String[] validOperators = {"=", "!=", ">", "<", ">=", "<=", "IN", "NOT IN", "LIKE", "NOT LIKE"};
-        boolean validOperator = false;
-        for (String validOp : validOperators) {
-            if (validOp.equals(upperOperator)) {
-                validOperator = true;
-                break;
-            }
-        }
-        
-        if (!validOperator) {
-            return "Invalid operator: " + operator + ". Valid operators are: =, !=, >, <, >=, <=, IN, NOT IN, LIKE, NOT LIKE";
-        }
-        
-        // For string values, check for injection patterns
-        if (value instanceof String stringValue) {
-            if (containsSqlInjectionPatterns(stringValue)) {
-                return "Condition value contains potentially dangerous SQL patterns: " + stringValue;
-            }
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Validate that at least one condition is provided for UPDATE (prevents full table updates)
-     * 
-     * @param hasConditions Whether conditions are present
-     * @param allowUnconditional Whether to allow unconditional updates
-     * @return Error message if validation fails, null if valid
-     */
-    public static String validateUpdateConditionsRequired(boolean hasConditions, boolean allowUnconditional) {
-        if (!hasConditions && !allowUnconditional) {
-            return "UPDATE operations require at least one condition for safety. Use allowUnconditional=true to bypass this check.";
-        }
-        return null;
-    }
-    
+
     /**
      * Validate DELETE operation parameters
      * 
@@ -408,86 +298,16 @@ public class SqlSecurityValidator {
         if (tableError != null) {
             return tableError;
         }
-        
+
         // Validate max affected records
         if (maxAffectedRecords <= 0) {
             return "Maximum affected records must be positive";
         }
-        
+
         if (maxAffectedRecords > 100000) {
             return "Maximum affected records cannot exceed 100000 for safety";
         }
-        
-        return null;
-    }
-    
-    /**
-     * Validate DELETE condition field and operator
-     * 
-     * This method validates DELETE condition parameters including field name, operator, and value
-     * to ensure safe and valid DELETE operations with proper SQL injection prevention.
-     * 
-     * @param fieldName Field name in condition
-     * @param operator SQL operator (=, !=, >, <, >=, <=, IN, NOT IN, LIKE, NOT LIKE)
-     * @param value Condition value
-     * @return Error message if validation fails, null if valid
-     * @author CaroLe
-     * @Date 2025/07/10
-     * @Description DELETE condition validation with SQL injection prevention
-     */
-    public static String validateDeleteCondition(String fieldName, String operator, Object value) {
-        // Validate field name
-        String fieldError = getColumnNameValidationError(fieldName);
-        if (fieldError != null) {
-            return fieldError;
-        }
-        
-        // Validate operator
-        if (operator == null || operator.trim().isEmpty()) {
-            return "Operator cannot be null or empty";
-        }
-        
-        String upperOperator = operator.toUpperCase().trim();
-        String[] validOperators = {"=", "!=", ">", "<", ">=", "<=", "IN", "NOT IN", "LIKE", "NOT LIKE"};
-        boolean validOperator = false;
-        for (String validOp : validOperators) {
-            if (validOp.equals(upperOperator)) {
-                validOperator = true;
-                break;
-            }
-        }
-        
-        if (!validOperator) {
-            return "Invalid operator: " + operator + ". Valid operators are: =, !=, >, <, >=, <=, IN, NOT IN, LIKE, NOT LIKE";
-        }
-        
-        // For string values, check for injection patterns
-        if (value instanceof String stringValue) {
-            if (containsSqlInjectionPatterns(stringValue)) {
-                return "Condition value contains potentially dangerous SQL patterns: " + stringValue;
-            }
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Validate that at least one condition is provided for DELETE (prevents full table deletes)
-     * 
-     * This method ensures that DELETE operations include proper WHERE conditions to prevent
-     * accidental deletion of all records in a table, which could result in data loss.
-     * 
-     * @param hasConditions Whether conditions are present
-     * @param allowUnconditional Whether to allow unconditional deletes
-     * @return Error message if validation fails, null if valid
-     * @author CaroLe
-     * @Date 2025/07/10
-     * @Description DELETE condition requirement validation for safety
-     */
-    public static String validateDeleteConditionsRequired(boolean hasConditions, boolean allowUnconditional) {
-        if (!hasConditions && !allowUnconditional) {
-            return "DELETE operations require at least one condition for safety. Use allowUnconditional=true to bypass this check.";
-        }
+
         return null;
     }
 
